@@ -206,8 +206,9 @@
                     <option value="gtbank">GTBank — 0699459971 — 229 Finger Foods and Grills</option>
                 </select></div>
                 <div><label>Service Charge Rate</label><select id="service-charge-rate" onchange="updateServiceChargeRate()">
-                    <option value="10">10%</option>
+                    <option value="15" selected>15%</option>
                     <option value="20">20%</option>
+                    <option value="25">25%</option>
                     <option value="30">30%</option>
                 </select></div>
                 <div></div>
@@ -655,7 +656,7 @@
             }
         }
         
-        let s = {}, f = 'All', selectedBank = 'sterling', serviceChargeRate = 10, currentStep = 1, passwordAction = '';
+        let s = {}, f = 'All', selectedBank = 'sterling', serviceChargeRate = 15, currentStep = 1, passwordAction = '';
         const bankAccounts = {
             sterling: { account: '0095975051', name: '229 Finger Foods And Grills', bank: 'Sterling Bank' },
             gtbank: { account: '0699459971', name: '229 Finger Foods And Grills', bank: 'GTBank' }
