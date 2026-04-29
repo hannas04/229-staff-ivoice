@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cuisine Fantastique - Professional Invoice Generator</title>
+    <title>229 - Professional Invoice Generator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -192,13 +192,25 @@
                 <div><label>Event Date</label><input type="date" id="event-date" required></div>
             </div>
             <div class="form-row">
-                <div><label>Location Type</label><select id="location-type" onchange="updateServiceChargeRate()" required>
+                <div><label>Location Type</label><select id="location-type" required>
                     <option value="">Select</option>
                     <option value="lagos">Within Lagos</option>
                     <option value="outside">Outside Lagos</option>
                 </select></div>
                 <div><label>Area (Optional)</label><input type="text" id="location" placeholder="Mainland"></div>
                 <div><label>Address</label><input type="text" id="address" placeholder="Venue" required></div>
+            </div>
+            <div class="form-row">
+                <div><label>Bank for Payment</label><select id="bank-account" onchange="updateServiceChargeRate()">
+                    <option value="sterling">Sterling Bank — 0095975051 — 229 Finger Foods and Grills</option>
+                    <option value="gtbank">GTBank — 0699459971 — 229 Finger Foods and Grills</option>
+                </select></div>
+                <div><label>Service Charge Rate</label><select id="service-charge-rate" onchange="updateServiceChargeRate()">
+                    <option value="10">10%</option>
+                    <option value="20">20%</option>
+                    <option value="30">30%</option>
+                </select></div>
+                <div></div>
             </div>
             <div class="form-row">
                 <div><label>Transport Fee (₦)</label><input type="number" id="transport-fee" value="5000" min="0"></div>
@@ -643,7 +655,11 @@
             }
         }
         
-        let s = {}, f = 'All', serviceChargeRate = 15, currentStep = 1, passwordAction = '';
+        let s = {}, f = 'All', selectedBank = 'sterling', serviceChargeRate = 10, currentStep = 1, passwordAction = '';
+        const bankAccounts = {
+            sterling: { account: '0095975051', name: '229 Finger Foods And Grills', bank: 'Sterling Bank' },
+            gtbank: { account: '0699459971', name: '229 Finger Foods And Grills', bank: 'GTBank' }
+        };
 
         function init() {
             try {
@@ -689,6 +705,7 @@
                         }
                     });
                 }
+                updateServiceChargeRate();
             } catch (e) {
                 console.error('Init error:', e);
                 alert('Error initializing application');
@@ -697,14 +714,19 @@
 
         function updateServiceChargeRate() {
             try {
-                const locTypeEl = document.getElementById('location-type');
-                if (!locTypeEl) return;
-                
-                const locationType = locTypeEl.value;
-                serviceChargeRate = (locationType === 'outside') ? 20 : 15;
+                const bankEl = document.getElementById('bank-account');
+                const serviceEl = document.getElementById('service-charge-rate');
+                if (bankEl && bankEl.value) {
+                    selectedBank = bankEl.value;
+                }
+                if (serviceEl && serviceEl.value) {
+                    const rate = parseFloat(serviceEl.value);
+                    serviceChargeRate = !Number.isNaN(rate) && rate > 0 ? rate : serviceChargeRate;
+                }
             } catch (e) {
-                console.error('Update service charge error:', e);
-                serviceChargeRate = 15; // Default fallback
+                console.error('Update payment settings error:', e);
+                serviceChargeRate = serviceChargeRate || 10;
+                selectedBank = selectedBank || 'sterling';
             }
         }
 
@@ -1007,6 +1029,8 @@
                         <p><strong>Location Type:</strong> ${escapeHtml(locType)}</p>
                         <p><strong>Area:</strong> ${escapeHtml(locArea)}</p>
                         <p><strong>Address:</strong> ${escapeHtml(addr)}</p>
+                        <p><strong>Payment Bank:</strong> ${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).bank)} (${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).account)})</p>
+                        <p><strong>Service Charge Rate:</strong> ${escapeHtml(serviceChargeRate.toString())}%</p>
                         <p><strong>Transport:</strong> ₦${parseFloat(transport).toLocaleString()}</p>
                         <p><strong>Discount:</strong> ₦${parseFloat(discount).toLocaleString()}</p>
                     `;
@@ -1083,6 +1107,8 @@
                 const discountEl = document.getElementById('discount');
                 const invoiceIdEl = document.getElementById('current-invoice-id');
                 const amountPaidEl = document.getElementById('current-amount-paid');
+                const bankEl = document.getElementById('bank-account');
+                const serviceRateEl = document.getElementById('service-charge-rate');
                 const searchInput = document.getElementById('search-input');
                 
                 if (clientNameEl) clientNameEl.value = data.client || '';
@@ -1095,6 +1121,8 @@
                 if (discountEl) discountEl.value = Math.max(0, data.discount || 0);
                 if (invoiceIdEl) invoiceIdEl.value = data.id || '';
                 if (amountPaidEl) amountPaidEl.value = Math.max(0, data.paid || 0);
+                if (bankEl) bankEl.value = data.bank || selectedBank;
+                if (serviceRateEl) serviceRateEl.value = (typeof data.serviceChargeRate === 'number' ? data.serviceChargeRate : serviceChargeRate).toString();
                 
                 updateServiceChargeRate();
                 
@@ -1223,12 +1251,12 @@
 
                 const t = Math.max(0, parseFloat(document.getElementById('transport-fee').value) || 0);
                 const discount = Math.max(0, parseFloat(document.getElementById('discount').value) || 0);
-            let sc = sub < 300000 ? 50000 : sub * (serviceChargeRate / 100);
-            const scLabel = sub < 300000 ? 'Service Charge (Flat):' : `Service Charge (${serviceChargeRate}%):`;
-            const vat = sc * 0.075;
-            const gt = (sub + sc + vat + t) - discount;
-            const amountPaid = parseFloat(document.getElementById('current-amount-paid').value) || 0;
-            const balanceDue = gt - amountPaid;
+                let sc = sub * (serviceChargeRate / 100);
+                const scLabel = `Service Charge (${serviceChargeRate}%):`;
+                const vat = sc * 0.075;
+                const gt = (sub + sc + vat + t) - discount;
+                const amountPaid = parseFloat(document.getElementById('current-amount-paid').value) || 0;
+                const balanceDue = gt - amountPaid;
 
             if (balanceDue < 0) { alert('Balance cannot be negative.'); return; }
 
@@ -1244,6 +1272,8 @@
                 discount: discount,
                 items: s,
                 paid: amountPaid,
+                bank: selectedBank,
+                serviceChargeRate: serviceChargeRate,
                 timestamp: Date.now()
             };
             localStorage.setItem(invId, JSON.stringify(invoiceData));
@@ -1313,9 +1343,9 @@
                         <h3 style="margin-bottom:12px;font-size:16px;font-weight:800;font-family:'Bodoni Moda', serif;">Bank Transfer Details</h3>
                         <div style="background:rgba(255,255,255,0.1);padding:12px;border-radius:6px;margin-bottom:15px;border:2px dashed rgba(255,255,255,0.3);">
                             <div style="font-size:12px;">
-                                <strong>Account:</strong> 0095975051<br>
-                                <strong>Name:</strong> 229 Finger Foods And Grills<br>
-                                <strong>Bank:</strong> Sterling Bank
+                                <strong>Account:</strong> ${bankAccounts[selectedBank].account}<br>
+                                <strong>Name:</strong> ${bankAccounts[selectedBank].name}<br>
+                                <strong>Bank:</strong> ${bankAccounts[selectedBank].bank}
                             </div>
                         </div>
                         <h4 style="margin-bottom:8px;font-size:13px;font-weight:800;color:#C5A059;">TERMS OF PAYMENT</h4>
@@ -1477,9 +1507,8 @@
                     const subtotal = Object.values(items).reduce((s, i) => s + (i.p * i.q), 0);
                     const transport = inv.transport || 0;
                     const discount = inv.discount || 0;
-                    let sc = subtotal < 300000 ? 50000 : subtotal * 0.15;
-                    const vat = sc * 0.075;
-                    totalRevenue += (subtotal + sc + vat + transport - discount);
+                        const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
+                        const sc = subtotal * (rate / 100);
                 });
                 
                 const totalInvoices = invoices.length;
@@ -1517,7 +1546,8 @@
                     const subtotal = Object.values(items).reduce((s, i) => s + (i.p * i.q), 0);
                     const transport = inv.transport || 0;
                     const discount = inv.discount || 0;
-                    let sc = subtotal < 300000 ? 50000 : subtotal * 0.15;
+                    const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
+                    const sc = subtotal * (rate / 100);
                     const vat = sc * 0.075;
                     const monthlyTotal = subtotal + sc + vat + transport - discount;
                     monthlyData[month] = (monthlyData[month] || 0) + monthlyTotal;
@@ -1724,7 +1754,8 @@
                         
                         const transport = Math.max(0, data.transport || 0);
                         const discount = Math.max(0, data.discount || 0);
-                        let sc = subtotal < 300000 ? 50000 : subtotal * 0.15;
+                        const rate = typeof data.serviceChargeRate === 'number' ? data.serviceChargeRate : 15;
+                        const sc = subtotal * (rate / 100);
                         const vat = sc * 0.075;
                         const total = subtotal + sc + vat + transport - discount;
                         const paid = Math.max(0, data.paid || 0);
