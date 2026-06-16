@@ -1508,8 +1508,10 @@
                     const subtotal = Object.values(items).reduce((s, i) => s + (i.p * i.q), 0);
                     const transport = inv.transport || 0;
                     const discount = inv.discount || 0;
-                        const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
-                        const sc = subtotal * (rate / 100);
+                    const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
+                    const sc = subtotal * (rate / 100);
+                    const vat = sc * 0.075;
+                    totalRevenue += subtotal + sc + vat + transport - discount;
                 });
                 
                 const totalInvoices = invoices.length;
