@@ -206,6 +206,7 @@
                     <option value="gtbank">GTBank — 0699459971 — 229 Finger Foods and Grills</option>
                 </select></div>
                 <div><label>Service Charge Rate</label><select id="service-charge-rate" onchange="updateServiceChargeRate()">
+                    <option value="0">0%</option>
                     <option value="15" selected>15%</option>
                     <option value="20">20%</option>
                     <option value="25">25%</option>
@@ -697,9 +698,9 @@
                 if (bankEl && bankEl.value) {
                     selectedBank = bankEl.value;
                 }
-                if (serviceEl && serviceEl.value) {
+                if (serviceEl && serviceEl.value !== '') {
                     const rate = parseFloat(serviceEl.value);
-                    serviceChargeRate = !Number.isNaN(rate) && rate > 0 ? rate : serviceChargeRate;
+                    serviceChargeRate = !Number.isNaN(rate) && rate >= 0 ? rate : serviceChargeRate;
                 }
             } catch (e) {
                 console.error('Update payment settings error:', e);
