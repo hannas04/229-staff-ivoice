@@ -216,6 +216,7 @@
             </div>
             <div class="form-row">
                 <div><label>Transport Fee (₦)</label><input type="number" id="transport-fee" value="5000" min="0"></div>
+                <div><label>Accommodation Fee (₦)</label><input type="number" id="accommodation-fee" value="0" min="0"></div>
                 <div><label>Discount (₦)</label><input type="number" id="discount" value="0" min="0"></div>
             </div>
             <div style="display:flex;gap:10px;margin-top:20px;">
@@ -955,13 +956,19 @@
                     });
                     
                     const transportEl = document.getElementById('transport-fee');
+                    const accommodationEl = document.getElementById('accommodation-fee');
                     const discountEl = document.getElementById('discount');
                     const transport = parseFloat(transportEl ? transportEl.value : 0);
+                    const accommodation = parseFloat(accommodationEl ? accommodationEl.value : 0);
                     const discount = parseFloat(discountEl ? discountEl.value : 0);
                     
                     if (isNaN(transport) || transport < 0 || transport > 999999999) { 
                         valid = false; 
                         alert('Invalid transportation fee (0-999,999,999)'); 
+                    }
+                    if (isNaN(accommodation) || accommodation < 0 || accommodation > 999999999) {
+                        valid = false;
+                        alert('Invalid accommodation fee (0-999,999,999)');
                     }
                     if (isNaN(discount) || discount < 0 || discount > 999999999) { 
                         valid = false; 
@@ -1008,9 +1015,10 @@
                         <p><strong>Location Type:</strong> ${escapeHtml(locType)}</p>
                         <p><strong>Area:</strong> ${escapeHtml(locArea)}</p>
                         <p><strong>Address:</strong> ${escapeHtml(addr)}</p>
-                        <p><strong>Payment Bank:</strong> ${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).bank)} (${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).account)})</p>
+                                <p><strong>Payment Bank:</strong> ${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).bank)} (${escapeHtml((bankAccounts[selectedBank] || bankAccounts['sterling']).account)})</p>
                         <p><strong>Service Charge Rate:</strong> ${escapeHtml(serviceChargeRate.toString())}%</p>
                         <p><strong>Transport:</strong> ₦${parseFloat(transport).toLocaleString()}</p>
+                        <p><strong>Accommodation:</strong> ₦${parseFloat(document.getElementById('accommodation-fee')?.value || 0).toLocaleString()}</p>
                         <p><strong>Discount:</strong> ₦${parseFloat(discount).toLocaleString()}</p>
                     `;
                 }
@@ -1097,6 +1105,8 @@
                 if (locationEl) locationEl.value = data.locArea || '';
                 if (addressEl) addressEl.value = data.addr || '';
                 if (transportEl) transportEl.value = Math.max(0, data.transport || 0);
+                const accommodationEl = document.getElementById('accommodation-fee');
+                if (accommodationEl) accommodationEl.value = Math.max(0, data.accommodation || 0);
                 if (discountEl) discountEl.value = Math.max(0, data.discount || 0);
                 if (invoiceIdEl) invoiceIdEl.value = data.id || '';
                 if (amountPaidEl) amountPaidEl.value = Math.max(0, data.paid || 0);
@@ -1229,11 +1239,12 @@
                 }).join('');
 
                 const t = Math.max(0, parseFloat(document.getElementById('transport-fee').value) || 0);
+                const accommodation = Math.max(0, parseFloat(document.getElementById('accommodation-fee').value) || 0);
                 const discount = Math.max(0, parseFloat(document.getElementById('discount').value) || 0);
                 let sc = sub * (serviceChargeRate / 100);
                 const scLabel = `Service Charge (${serviceChargeRate}%):`;
                 const vat = sc * 0.075;
-                const gt = (sub + sc + vat + t) - discount;
+                const gt = (sub + sc + vat + t + accommodation) - discount;
                 const amountPaid = parseFloat(document.getElementById('current-amount-paid').value) || 0;
                 const balanceDue = gt - amountPaid;
 
@@ -1248,6 +1259,7 @@
                 locArea: l,
                 addr: a,
                 transport: t,
+                accommodation: accommodation,
                 discount: discount,
                 items: s,
                 paid: amountPaid,
@@ -1293,6 +1305,7 @@
                         <h3 style="color:#C5A059;margin-bottom:10px;font-size:17px;font-weight:800;font-family:'Bodoni Moda', serif;">Event Details</h3>
                         <p style="font-weight:800;font-size:14px;"><strong>Event Date:</strong> ${new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         <p style="font-weight:800;font-size:14px;margin-top:5px;"><strong>Transport Fee:</strong> ₦${t.toLocaleString()}</p>
+                        <p style="font-weight:800;font-size:14px;margin-top:5px;"><strong>Accommodation:</strong> ₦${accommodation.toLocaleString()}</p>
                         <p style="font-weight:800;font-size:14px;margin-top:5px;"><strong>Service Charge:</strong> ₦${sc.toLocaleString()}</p>
                     </div>
                 </div>
@@ -1311,6 +1324,7 @@
                             <div style="display:flex;justify-content:space-between;"><span>Subtotal:</span><span style="font-weight:800;">₦${sub.toLocaleString()}</span></div>
                             <div style="display:flex;justify-content:space-between;"><span>${scLabel}:</span><span style="font-weight:800;">₦${sc.toLocaleString()}</span></div>
                             <div style="display:flex;justify-content:space-between;"><span>Transport:</span><span style="font-weight:800;">₦${t.toLocaleString()}</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span>Accommodation:</span><span style="font-weight:800;">₦${accommodation.toLocaleString()}</span></div>
                             <div style="display:flex;justify-content:space-between;color:#666;"><span><em>VAT (7.5%):</em></span><span style="font-weight:800;">₦${vat.toLocaleString()}</span></div>
                             ${discount > 0 ? `<div style="display:flex;justify-content:space-between;color:#C5A059;font-weight:800;"><span>✨ Discount:</span><span>-₦${discount.toLocaleString()}</span></div>` : ''}
                             <hr style="border:none;border-top:1px solid #e5e5e5;margin:10px 0;">
@@ -1485,11 +1499,12 @@
                     const items = inv.items || {};
                     const subtotal = Object.values(items).reduce((s, i) => s + (i.p * i.q), 0);
                     const transport = inv.transport || 0;
+                    const accommodation = inv.accommodation || 0;
                     const discount = inv.discount || 0;
                     const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
                     const sc = subtotal * (rate / 100);
                     const vat = sc * 0.075;
-                    totalRevenue += subtotal + sc + vat + transport - discount;
+                    totalRevenue += subtotal + sc + vat + transport + accommodation - discount;
                 });
                 
                 const totalInvoices = invoices.length;
@@ -1526,11 +1541,12 @@
                     const items = inv.items || {};
                     const subtotal = Object.values(items).reduce((s, i) => s + (i.p * i.q), 0);
                     const transport = inv.transport || 0;
+                    const accommodation = inv.accommodation || 0;
                     const discount = inv.discount || 0;
                     const rate = typeof inv.serviceChargeRate === 'number' ? inv.serviceChargeRate : 15;
                     const sc = subtotal * (rate / 100);
                     const vat = sc * 0.075;
-                    const monthlyTotal = subtotal + sc + vat + transport - discount;
+                    const monthlyTotal = subtotal + sc + vat + transport + accommodation - discount;
                     monthlyData[month] = (monthlyData[month] || 0) + monthlyTotal;
                 });
                 
@@ -1734,11 +1750,12 @@
                         });
                         
                         const transport = Math.max(0, data.transport || 0);
+                        const accommodation = Math.max(0, data.accommodation || 0);
                         const discount = Math.max(0, data.discount || 0);
                         const rate = typeof data.serviceChargeRate === 'number' ? data.serviceChargeRate : 15;
                         const sc = subtotal * (rate / 100);
                         const vat = sc * 0.075;
-                        const total = subtotal + sc + vat + transport - discount;
+                        const total = subtotal + sc + vat + transport + accommodation - discount;
                         const paid = Math.max(0, data.paid || 0);
                         const isPaid = paid >= total;
                         const remaining = Math.max(0, total - paid);
